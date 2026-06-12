@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>OrthoVisionΔ Web v0.9.1 ParallaxeVivanteΔ corrigée</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="stage">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="view" width="640" height="480"></canvas>
+
+      <div id="hud">
+        <div class="title">OrthoVisionΔ Web v0.9.1 ParallaxeVivanteΔ corrigée</div>
+        <div id="hud-lines"></div>
+      </div>
+    </section>
+
+    <section id="controls">
+      <button id="startBtn">Démarrer caméra</button>
+      <button id="modeBtn">Mode suivant</button>
+      <button id="qualityBtn">QualitéΔ : Normal</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="hudBtn">HUD ON/OFF</button>
+      <button id="fullscreenBtn">Plein écran</button>
+      <button id="captureBtn">Capture</button>
+      <button id="resetBtn">Reset mémoire</button>
+      <button id="cameraBtn">Caméra avant/arrière</button>
+      <button id="audioBtn">AudioPulseΔ OFF</button>
+    </section>
+
+    <section id="notes">
+      <p>
+        v0.9.1 : corrige ParallaxeVivanteΔ pour lire seulement les zones tenues, masquer le bruit et éviter la mosaïque instable.
+      </p>
+      <p>
+        Tout tourne localement en RAM dans le navigateur. Rien n’est écrit sauf si tu cliques Capture.
+      </p>
+    </section>
+  </main>
+
+  <script src="js/orthovision-state.js"></script>
+  <script src="js/orthovision-core.js"></script>
+  <script src="js/orthovision-views.js"></script>
+  <script src="js/orthovision-audio.js"></script>
+  <script src="js/orthovision-ui.js"></script>
+</body>
+</html>
