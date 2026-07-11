@@ -33,10 +33,31 @@
     "AUDIOPULSE": OV.drawAudioPulse
   };
 
+  function drawHud(info) {
+    if (hud.classList.contains("hidden")) return;
+    const topPresence = S.stablePresences[0];
+    const presenceTxt = topPresence ? `P${topPresence.id} ${topPresence.rank} ${topPresence.avg.toFixed(1)}` : "aucune";
+    hudLines.innerHTML = [
+      `Mode : ${OV.MODES[S.modeIndex]}`,
+      `Frame : ${S.frameId} | FPS : ${S.fps.toFixed(1)}`,
+      `Instant : ${info.instant.toFixed(2)}`,
+      `Multi : H${info.multi[0].toFixed(2)} / M${info.multi[1].toFixed(2)} / L${info.multi[2].toFixed(2)}`
+    ].join("<br>");
+  }
+
+  function updateFps() {
+    S.fpsFrames++;
+    const now = performance.now();
+    if (now - S.lastFpsTime >= 500) {
+      S.fps = S.fpsFrames * 1000 / (now - S.lastFpsTime);
+      S.fpsFrames = 0;
+      S.lastFpsTime = now;
+    }
+  }
+
   function renderFrame() {
     ctx.drawImage(video, 0, 0, S.W, S.H);
     const img = ctx.getImageData(0, 0, S.W, S.H);
-
     OV.extractLuma(img.data);
 
     if (S.first) {
@@ -48,27 +69,46 @@
 
     const instant = OV.computeDiffAndInstant();
     const multi = OV.updateTemporal();
-    const [zoneI, zoneV, zoneRank] = OV.computeZonesAndFoyer();
-
+    OV.computeZonesAndFoyer();
     OV.computePresences();
     OV.updatePresenceTenue();
     OV.updatePulsationLumineuse();
     OV.updateParallaxeVivante();
 
-    // Rendu dynamique via Dispatch
+    // Rendu dynamique sécurisé
     const modeName = OV.MODES[S.modeIndex];
     const renderFn = RENDER_DISPATCH[modeName];
     if (renderFn) renderFn(ctx, img);
+    else OV.drawImage(ctx, img);
 
     drawHud({ instant, multi });
     S.prevLuma.set(S.currLuma);
     S.frameId++;
   }
 
-  // --- Initialisation UI ---
-  // On attache les événements de manière propre
+  function loop() {
+    if (!S.running) return;
+    if (!S.paused && video.readyState >= 2) {
+      renderFrame();
+      updateFps();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  OV.startCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) return alert("Caméra non supportée.");
+    if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+    const q = OV.QUALITIES[S.qualityIndex];
+    const constraints = { video: { facingMode: { ideal: S.facingMode }, width: q.w, height: q.h } };
+    S.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = S.stream;
+    await video.play();
+    OV.resetMemory();
+    if (!S.running) { S.running = true; requestAnimationFrame(loop); }
+  };
+
+  // --- Événements ---
   document.addEventListener('DOMContentLoaded', () => {
-    // Si tu as gardé un sélecteur dans le HTML
     const modeSel = document.getElementById("modeSelector");
     if(modeSel) {
       modeSel.addEventListener('change', (e) => {
@@ -76,8 +116,15 @@
         if(idx !== -1) S.modeIndex = idx;
       });
     }
-  });
 
-  // ... (Garde tes fonctions startCamera et autres eventListeners ici)
-  // Remarque : Le reste de la logique reste identique pour la compatibilité.
+    OV.$("startBtn").addEventListener("click", OV.startCamera);
+    OV.$("modeBtn")?.addEventListener("click", () => S.modeIndex = (S.modeIndex + 1) % OV.MODES.length);
+    OV.$("pauseBtn").addEventListener("click", () => { S.paused = !S.paused; });
+    OV.$("hudBtn").addEventListener("click", () => hud.classList.toggle("hidden"));
+    OV.$("fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : OV.$("stage").requestFullscreen());
+    OV.$("captureBtn").addEventListener("click", () => {
+      const a = document.createElement("a"); a.href = canvas.toDataURL("image/png"); a.download = `ortho_${Date.now()}.png`; a.click();
+    });
+    OV.$("resetBtn").addEventListener("click", OV.resetMemory);
+  });
 })();
