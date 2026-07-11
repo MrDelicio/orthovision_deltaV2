@@ -41,7 +41,8 @@
       `Mode : ${OV.MODES[S.modeIndex]}`,
       `Frame : ${S.frameId} | FPS : ${S.fps.toFixed(1)}`,
       `Instant : ${info.instant.toFixed(2)}`,
-      `Multi : H${info.multi[0].toFixed(2)} / M${info.multi[1].toFixed(2)} / L${info.multi[2].toFixed(2)}`
+      `Multi : H${info.multi[0].toFixed(2)} / M${info.multi[1].toFixed(2)} / L${info.multi[2].toFixed(2)}`,
+      `Présences : ${presenceTxt}`
     ].join("<br>");
   }
 
@@ -75,11 +76,10 @@
     OV.updatePulsationLumineuse();
     OV.updateParallaxeVivante();
 
-    // Rendu dynamique sécurisé
+    // Rendu via Dispatch (Purifié)
     const modeName = OV.MODES[S.modeIndex];
     const renderFn = RENDER_DISPATCH[modeName];
-    if (renderFn) renderFn(ctx, img);
-    else OV.drawImage(ctx, img);
+    renderFn ? renderFn(ctx, img) : OV.drawImage(ctx, img);
 
     drawHud({ instant, multi });
     S.prevLuma.set(S.currLuma);
@@ -96,18 +96,20 @@
   }
 
   OV.startCamera = async () => {
-    if (!navigator.mediaDevices?.getUserMedia) return alert("Caméra non supportée.");
-    if (S.stream) S.stream.getTracks().forEach(t => t.stop());
-    const q = OV.QUALITIES[S.qualityIndex];
-    const constraints = { video: { facingMode: { ideal: S.facingMode }, width: q.w, height: q.h } };
-    S.stream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = S.stream;
-    await video.play();
-    OV.resetMemory();
-    if (!S.running) { S.running = true; requestAnimationFrame(loop); }
+    try {
+      if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+      const q = OV.QUALITIES[S.qualityIndex];
+      S.stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: { ideal: S.facingMode }, width: q.w, height: q.h } 
+      });
+      video.srcObject = S.stream;
+      await video.play();
+      OV.resetMemory();
+      S.running = true;
+      requestAnimationFrame(loop);
+    } catch (e) { alert("Caméra erreur : " + e.message); }
   };
 
-  // --- Événements ---
   document.addEventListener('DOMContentLoaded', () => {
     const modeSel = document.getElementById("modeSelector");
     if(modeSel) {
@@ -118,7 +120,6 @@
     }
 
     OV.$("startBtn").addEventListener("click", OV.startCamera);
-    OV.$("modeBtn")?.addEventListener("click", () => S.modeIndex = (S.modeIndex + 1) % OV.MODES.length);
     OV.$("pauseBtn").addEventListener("click", () => { S.paused = !S.paused; });
     OV.$("hudBtn").addEventListener("click", () => hud.classList.toggle("hidden"));
     OV.$("fullscreenBtn").addEventListener("click", () => document.fullscreenElement ? document.exitFullscreen() : OV.$("stage").requestFullscreen());
