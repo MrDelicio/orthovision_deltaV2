@@ -76,7 +76,7 @@
     OV.updatePulsationLumineuse();
     OV.updateParallaxeVivante();
 
-    // Rendu via Dispatch (Purifié)
+    // Rendu via Dispatch
     const modeName = OV.MODES[S.modeIndex];
     const renderFn = RENDER_DISPATCH[modeName];
     renderFn ? renderFn(ctx, img) : OV.drawImage(ctx, img);
@@ -97,17 +97,29 @@
 
   OV.startCamera = async () => {
     try {
-      if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+      // Sécurisation de l'accès aux qualités
+      if (!OV.QUALITIES || !OV.QUALITIES[S.qualityIndex]) S.qualityIndex = 1;
       const q = OV.QUALITIES[S.qualityIndex];
+      
+      if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+      
       S.stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: { ideal: S.facingMode }, width: q.w, height: q.h } 
+        video: { 
+          facingMode: { ideal: S.facingMode }, 
+          width: { ideal: q.w }, 
+          height: { ideal: q.h } 
+        } 
       });
+      
       video.srcObject = S.stream;
       await video.play();
       OV.resetMemory();
       S.running = true;
       requestAnimationFrame(loop);
-    } catch (e) { alert("Caméra erreur : " + e.message); }
+    } catch (e) { 
+      alert("Caméra erreur : " + e.message); 
+      console.error(e);
+    }
   };
 
   document.addEventListener('DOMContentLoaded', () => {
