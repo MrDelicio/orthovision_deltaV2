@@ -10,7 +10,7 @@
   const hud = OV.$("hud");
   const hudLines = OV.$("hud-lines");
 
-  // --- Dispatcher dynamique (Remplace les if/else) ---
+  // --- Dispatcher dynamique ---
   const RENDER_DISPATCH = {
     "IMAGE": OV.drawImage,
     "IMAGE+TRACE": OV.drawImageTrace,
@@ -76,7 +76,6 @@
     OV.updatePulsationLumineuse();
     OV.updateParallaxeVivante();
 
-    // Rendu via Dispatch
     const modeName = OV.MODES[S.modeIndex];
     const renderFn = RENDER_DISPATCH[modeName];
     renderFn ? renderFn(ctx, img) : OV.drawImage(ctx, img);
@@ -97,15 +96,16 @@
 
   OV.startCamera = async () => {
     try {
-      // Sécurisation de l'accès aux qualités
-      if (!OV.QUALITIES || !OV.QUALITIES[S.qualityIndex]) S.qualityIndex = 1;
-      const q = OV.QUALITIES[S.qualityIndex];
+      // Sécurité absolue pour les qualités d'image
+      const Qualites = OV.QUALITIES || [{ name: "Normal", w: 640, h: 480 }];
+      const idx = S.qualityIndex || 0;
+      const q = Qualites[idx] || Qualites[0];
       
       if (S.stream) S.stream.getTracks().forEach(t => t.stop());
       
       S.stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: { ideal: S.facingMode }, 
+          facingMode: { ideal: S.facingMode || "environment" }, 
           width: { ideal: q.w }, 
           height: { ideal: q.h } 
         } 
