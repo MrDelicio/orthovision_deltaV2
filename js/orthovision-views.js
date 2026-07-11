@@ -4,73 +4,62 @@
   const OV = window.OV;
   const S = OV.S;
 
-  // --- Fonctions de transfert sans branchement ---
+  // --- LUTs (Tables de correspondances) ---
+  // Pré-calculé pour couvrir 0 à 60 (valeurs d'intensité courantes)
+  const LUT_SPECTRAL = new Uint8Array(64 * 3); // 64 indices, 3 composantes RGB
   
-  // Remplace le switch/case de zoneColor
-  const ZONE_PALETTE = [
+  // Initialisation unique au démarrage
+  function initLUTs() {
+    for (let v = 0; v < 64; v++) {
+      let r, g, b;
+      // Logique continue sans branchement
+      r = Math.min(255, Math.max(0, (v - 24) * 10));
+      g = Math.min(255, Math.max(0, (v - 10) * 15));
+      b = Math.min(255, Math.max(0, v * 4));
+      
+      LUT_SPECTRAL[v * 3]     = r;
+      LUT_SPECTRAL[v * 3 + 1] = g;
+      LUT_SPECTRAL[v * 3 + 2] = b;
+    }
+  }
+  initLUTs();
+
+  // --- Fonctions de Rendu Purifiées ---
+
+  // Remplaçant de spectralColor : accès mémoire O(1) sans condition
+  function spectralColorPure(v) {
+    const idx = Math.min(63, Math.floor(v)) * 3;
+    return OV.rgba(LUT_SPECTRAL[idx], LUT_SPECTRAL[idx+1], LUT_SPECTRAL[idx+2]);
+  }
+
+  // Remplaçant de zoneColor (Palette fixe)
+  const ZONE_LUT = [
     [0, 0, 0], [16, 16, 16], [48, 48, 0], [112, 96, 0], 
     [176, 128, 0], [208, 64, 0], [255, 0, 0], [255, 255, 255]
   ];
 
   function zoneColorPure(v) {
-    // Conversion de rang (O=0, U=1... H=7)
-    const rank = OV.rankIndexFromVariation(v); // Assure-toi que cette fonction renvoie l'index 0-7
-    const c = ZONE_PALETTE[rank] || [0, 0, 0];
+    // Supposons que rankIndexFromVariation renvoie 0-7
+    const rank = OV.rankIndexFromVariation(v);
+    const c = ZONE_LUT[rank];
     return OV.rgba(c[0], c[1], c[2]);
   }
 
-  // --- Rendu optimisé ---
-
-  OV.drawZones = (ctx, img) => {
+  // --- Intégration dans drawMembraneFine ---
+  OV.drawMembraneFine = (ctx, img, spectral = false) => {
     const out = img.data;
-    out.fill(0);
-
-    for (let zi = 0; zi < S.ZONE_COUNT; zi++) {
-      const c = zoneColorPure(S.zonesDelta[zi]);
-      const zx = zi % S.ZONE_COLS;
-      const zy = Math.floor(zi / S.ZONE_COLS);
-      
-      const x0 = Math.floor(zx * S.W / S.ZONE_COLS);
-      const x1 = Math.floor((zx + 1) * S.W / S.ZONE_COLS);
-      const y0 = Math.floor(zy * S.H / S.ZONE_ROWS);
-      const y1 = Math.floor((zy + 1) * S.H / S.ZONE_ROWS);
-
-      for (let y = y0; y < y1; y++) {
-        const row = y * S.W;
-        for (let x = x0; x < x1; x++) {
-          OV.putPixel(out, row + x, c);
-        }
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-  };
-
-  OV.drawContrasteOrganique = (ctx, img) => {
-    const data = img.data;
-    const flashReduce = S.antiFlashActive ? 0.45 : 1.0;
-
     for (let p = 0; p < S.N; p++) {
+      const v = S.diffPixels[p]; // Valeur brute
+      
+      // Accès direct sans if
+      const idx = Math.min(63, Math.floor(v)) * 3;
+      const r = LUT_SPECTRAL[idx];
+      const g = LUT_SPECTRAL[idx+1];
+      const b = LUT_SPECTRAL[idx+2];
+      
       const i = p * 4;
-      const x = p % S.W;
-      const y = Math.floor(p / S.W);
-      
-      // Calcul du gain sans "if" (masquage scalaire)
-      const dist = Math.hypot(x - S.foyerX, y - S.foyerY);
-      const foyerGain = OV.clamp(1 - dist / Math.max(24, Math.min(S.W, S.H) * 0.2), 0, 1) * S.foyerStrength;
-      
-      const organic = OV.clamp(localEdgeAt(x, y) / 42, 0, 1) * 0.55 +
-                      OV.clamp(S.diffPixels[p] / 28, 0, 1) * 0.30 +
-                      foyerGain * 0.22;
-
-      const contrast = 1.0 + organic * flashReduce * 0.55;
-      
-      // Application linéaire
-      data[i]     = OV.clamp(128 + (data[i] - 128) * contrast, 0, 255);
-      data[i + 1] = OV.clamp(128 + (data[i + 1] - 128) * contrast, 0, 255);
-      data[i + 2] = OV.clamp(128 + (data[i + 2] - 128) * contrast, 0, 255);
+      out[i] = r; out[i+1] = g; out[i+2] = b; out[i+3] = 255;
     }
     ctx.putImageData(img, 0, 0);
   };
-
-  // ... (Appliquer le même principe de suppression de conditionnel à drawParallaxeVivante)
 })();
