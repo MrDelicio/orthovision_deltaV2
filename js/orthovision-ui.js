@@ -10,7 +10,6 @@
   const hud = OV.$("hud");
   const hudLines = OV.$("hud-lines");
 
-  // --- Dispatcher dynamique ---
   const RENDER_DISPATCH = {
     "IMAGE": OV.drawImage,
     "IMAGE+TRACE": OV.drawImageTrace,
@@ -96,7 +95,7 @@
 
   OV.startCamera = async () => {
     try {
-      // Sécurité absolue pour les qualités d'image
+      // Sécurité absolue : si QUALITIES est absent, on le recrée ici même
       const Qualites = OV.QUALITIES || [{ name: "Normal", w: 640, h: 480 }];
       const idx = S.qualityIndex || 0;
       const q = Qualites[idx] || Qualites[0];
@@ -117,7 +116,7 @@
       S.running = true;
       requestAnimationFrame(loop);
     } catch (e) { 
-      alert("Caméra erreur : " + e.message); 
+      alert("Erreur caméra : " + e.message); 
       console.error(e);
     }
   };
