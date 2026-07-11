@@ -21,11 +21,27 @@
     <section id="controls">
       <button id="startBtn">Démarrer caméra</button>
       
-      <!-- Commande Auto : Remplacement du bouton mode par un sélecteur dynamique -->
-      <select id="modeSelector" onchange="OV.setMode(this.value)">
-        <option value="FIXE">Mode : Fixe (Base)</option>
-        <option value="MOBILE">Mode : Mobile (Suivi)</option>
-        <option value="SIGNAL">Mode : Signal (Brut)</option>
+      <!-- Sélecteur synchronisé avec OV.MODES -->
+      <select id="modeSelector">
+        <option value="IMAGE">Image</option>
+        <option value="IMAGE+TRACE">Image+Trace</option>
+        <option value="TRACE SEULE">Trace Seule</option>
+        <option value="ZONES DELTA">Zones Delta</option>
+        <option value="MEMBRANE FINE">Membrane Fine</option>
+        <option value="SPECTRE DELTA">Spectre Delta</option>
+        <option value="MULTI ECHELLE">Multi Échelle</option>
+        <option value="CARTE CALME">Carte Calme</option>
+        <option value="FOYER DELTA">Foyer Delta</option>
+        <option value="FOYER VIVANT">Foyer Vivant</option>
+        <option value="PRESENCE DELTA">Présence Delta</option>
+        <option value="MEMOIRE VIVE">Mémoire Vive</option>
+        <option value="PULSATION LUMINEUSE">Pulsation Lumineuse</option>
+        <option value="CONTRASTE ORGANIQUE">Contraste Organique</option>
+        <option value="RELIEF OPTIQUE">Relief Optique</option>
+        <option value="RELIEF PUR">Relief Pur</option>
+        <option value="RELIEF NOIR">Relief Noir</option>
+        <option value="PARALLAXE VIVANTE">Parallaxe Vivante</option>
+        <option value="AUDIOPULSE">AudioPulse</option>
       </select>
 
       <button id="qualityBtn">QualitéΔ : Normal</button>
@@ -39,13 +55,7 @@
     </section>
 
     <section id="notes">
-      <p>
-        v0.9.2 : Migration vers une architecture de Dispatch sans branchements conditionnels. 
-        Le moteur utilise désormais des registres de configuration pour la ParallaxeVivanteΔ.
-      </p>
-      <p>
-        Tout tourne localement en RAM. Le système évite désormais les bifurcations binaires (if/else) dans la boucle de calcul.
-      </p>
+      <p>v0.9.2 : Architecture de Dispatch purifiée. Moteur à flux de données sans branchements binaires.</p>
     </section>
   </main>
 
