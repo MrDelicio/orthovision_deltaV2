@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>OrthoVisionΔ Web v0.9.1 ParallaxeVivanteΔ corrigée</title>
+  <title>OrthoVisionΔ Web v0.9.2 — Architecture Purifiée</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,14 +13,21 @@
       <canvas id="view" width="640" height="480"></canvas>
 
       <div id="hud">
-        <div class="title">OrthoVisionΔ Web v0.9.1 ParallaxeVivanteΔ corrigée</div>
+        <div class="title">OrthoVisionΔ Web v0.9.2 — Régime Dynamique</div>
         <div id="hud-lines"></div>
       </div>
     </section>
 
     <section id="controls">
       <button id="startBtn">Démarrer caméra</button>
-      <button id="modeBtn">Mode suivant</button>
+      
+      <!-- Commande Auto : Remplacement du bouton mode par un sélecteur dynamique -->
+      <select id="modeSelector" onchange="OV.setMode(this.value)">
+        <option value="FIXE">Mode : Fixe (Base)</option>
+        <option value="MOBILE">Mode : Mobile (Suivi)</option>
+        <option value="SIGNAL">Mode : Signal (Brut)</option>
+      </select>
+
       <button id="qualityBtn">QualitéΔ : Normal</button>
       <button id="pauseBtn">Pause</button>
       <button id="hudBtn">HUD ON/OFF</button>
@@ -33,10 +40,11 @@
 
     <section id="notes">
       <p>
-        v0.9.1 : corrige ParallaxeVivanteΔ pour lire seulement les zones tenues, masquer le bruit et éviter la mosaïque instable.
+        v0.9.2 : Migration vers une architecture de Dispatch sans branchements conditionnels. 
+        Le moteur utilise désormais des registres de configuration pour la ParallaxeVivanteΔ.
       </p>
       <p>
-        Tout tourne localement en RAM dans le navigateur. Rien n’est écrit sauf si tu cliques Capture.
+        Tout tourne localement en RAM. Le système évite désormais les bifurcations binaires (if/else) dans la boucle de calcul.
       </p>
     </section>
   </main>
